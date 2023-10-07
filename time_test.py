@@ -2,6 +2,9 @@ import random
 import time
 import matplotlib.pyplot as plt
 import numpy as np
+import csv
+from datetime import datetime
+import os
 
 from quick_select import QuickSelect, Util
 
@@ -11,7 +14,11 @@ def quickselect(arr, k):
     return solution.quick_select(arr, k)
 
 # Define the array length range for testing
-array_lengths = [10**1, 10**2, 10**3, 10**4, 10**5, 10**6]
+array_lengths = []
+n_range = 6
+for i in range(1, n_range):
+    array_lengths.extend([1 * (10 ** i), 4 * (10 ** i), 7 * (10 ** i)])
+array_lengths.append(10 ** n_range)
 
 # Lists to store the measured times and O(n) times
 measured_times = []
@@ -47,8 +54,33 @@ for length in array_lengths:
     # Print the results and average running time
     print(f"Array length: {length}, {k}th smallest element is {result}")
     print(f"Average running time: {average_time} seconds")
+
+# Scale the O(n) time for comparison
+scaling_factor = measured_times[(n_range * 3) - 3] / on_times[(n_range * 3) - 3]
+scaled_on_times = [on_time * scaling_factor for on_time in on_times]
+
+# Get current date and time
+current_datetime = datetime.now()
+formatted_datetime = current_datetime.strftime("%Y-%m-%d_%H-%M-%S")
+
+# Create the directory for record files
+record_dir = os.path.join('record', formatted_datetime)
+os.makedirs(record_dir, exist_ok=True)
+
+# Create the file name with date and time
+csv_file_name = f"time_record_{formatted_datetime}.csv"
+figure_file_name = f"time_comparison_figure_{formatted_datetime}.png"
+
+# Write the data to a CSV file in the record directory
+csv_file_path = os.path.join(record_dir, csv_file_name)
+with open(csv_file_path, mode='w', newline='') as file:
+    writer = csv.writer(file)
+    writer.writerow(["Array Length", "Measured Time (seconds)", "O(n) Time", "Scaled O(n) Time"])
     
-    # Plot the measured times and O(n) times
+    for i in range(len(array_lengths)):
+        writer.writerow([array_lengths[i], measured_times[i], on_times[i], scaled_on_times[i]])
+
+# Plot the measured times and O(n) times
 plt.figure(figsize=(10, 6))
 plt.plot(np.log10(array_lengths), measured_times, label='Measured Time (seconds)')
 plt.plot(np.log10(array_lengths), on_times, label='O(n) Time', linestyle='--')
@@ -56,11 +88,14 @@ plt.xlabel('Log(Array Length)')
 plt.ylabel('Time (seconds)')
 plt.legend()
 
-# Scale the O(n) time for comparison
-scaling_factor = measured_times[5] / on_times[5]
-scaled_on_times = [on_time * scaling_factor for on_time in on_times]
 plt.plot(np.log10(array_lengths), scaled_on_times, label='Scaled O(n) Time')
 
 plt.legend()
 plt.title('Time Complexity Comparison')
+
+# Save the figure in the record directory
+figure_file_path = os.path.join(record_dir, figure_file_name)
+plt.savefig(figure_file_path)
+
+# Show the figure
 plt.show()
